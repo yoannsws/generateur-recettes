@@ -2,6 +2,8 @@ import { useState } from "react";
 
 const GREEN = { bg: "#f0f7f0", border: "#4a9e6b", text: "#2d6e47", light: "#e1f0e5", dark: "#1e5c38", mid: "#4a9e6b" };
 
+const CODES = ["YOAHUCK26", "LUDTHEPIN26", "ASTCOLMENARES26"];
+
 const DIETS = ["Aucun", "Végétarien", "Sans gluten"];
 const TASTE = ["Salé", "Sucré"];
 const TEMP = ["Chaud", "Froid"];
@@ -60,7 +62,47 @@ const Btn = ({ children, onClick, disabled, variant = "primary", style = {} }) =
 
 const steps = ["Macros", "Préférences", "Mode", "Recette"];
 
+function Login({ onLogin }) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState(false);
+
+  const handleLogin = () => {
+    if (CODES.includes(code.toUpperCase().trim())) {
+      onLogin();
+    } else {
+      setError(true);
+      setTimeout(() => setError(false), 2000);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 380, margin: "80px auto", padding: "2rem 1.5rem", textAlign: "center" }}>
+      <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 52, height: 52, borderRadius: "50%", background: GREEN.bg, marginBottom: 16 }}>
+        <span style={{ fontSize: 26 }}>🥗</span>
+      </div>
+      <p style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 500, color: "#222" }}>Générateur de recettes</p>
+      <p style={{ margin: "0 0 32px", fontSize: 13, color: "#888" }}>Entre ton code d'accès pour continuer</p>
+
+      <input
+        type="password"
+        placeholder="Code d'accès"
+        value={code}
+        onChange={e => setCode(e.target.value)}
+        onKeyDown={e => e.key === "Enter" && handleLogin()}
+        style={{ width: "100%", boxSizing: "border-box", marginBottom: 12, textAlign: "center", fontSize: 16, letterSpacing: "0.1em", padding: "11px 12px", border: `1.5px solid ${error ? "#e53e3e" : GREEN.mid}`, borderRadius: 8, outline: "none" }}
+      />
+      {error && <p style={{ color: "#e53e3e", fontSize: 13, marginBottom: 8 }}>Code incorrect. Réessaie.</p>}
+      <button onClick={handleLogin} style={{
+        width: "100%", padding: "11px", fontSize: 14, fontWeight: 500, borderRadius: 8,
+        background: GREEN.mid, color: "#fff", border: "none", cursor: "pointer",
+      }}>Accéder à l'outil</button>
+      <p style={{ marginTop: 20, fontSize: 12, color: "#bbb" }}>Accès réservé aux clients Smart Way System</p>
+    </div>
+  );
+}
+
 export default function App() {
+  const [auth, setAuth] = useState(false);
   const [form, setForm] = useState(defaultForm);
   const [step, setStep] = useState(1);
   const [result, setResult] = useState(null);
@@ -87,7 +129,7 @@ export default function App() {
   const generate = async () => {
     setLoading(true); setError(null); setResult(null);
     try {
-      const res = await fetch("/api/generate", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: buildPrompt() }] }),
@@ -129,6 +171,8 @@ export default function App() {
     try { document.execCommand("copy"); setCopied(true); setTimeout(() => setCopied(false), 2500); } catch {}
     document.body.removeChild(el);
   };
+
+  if (!auth) return <Login onLogin={() => setAuth(true)} />;
 
   return (
     <div style={{ maxWidth: 540, margin: "0 auto", padding: "1.5rem 1rem", fontFamily: "system-ui, sans-serif" }}>
