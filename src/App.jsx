@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const GREEN = { bg: "#f0f7f0", border: "#4a9e6b", text: "#2d6e47", light: "#e1f0e5", dark: "#1e5c38", mid: "#4a9e6b" };
 
-const CODES = ["YOAHUCK26", "LUDTHEPIN26", "ASTCOLMENARES26"];
+const CODES = ["YOAHUCK26", "LUDTHEPIN26", "ASTCOLMENARES26", "ALEMARNEUR26"];
 
 const DIETS = ["Aucun", "Végétarien", "Sans gluten"];
 const TASTE = ["Salé", "Sucré"];
@@ -114,7 +114,7 @@ export default function App() {
 
   const canNext1 = form.calories && form.proteins && form.carbs && form.fats;
   const canNext2 = form.taste && form.temp;
-  const canGenerate = form.mode && (form.mode === "libre" || form.ingredients.trim().length > 2);
+  const canGenerate = form.ingredients.trim().length > 2;
 
   const buildPrompt = () => {
     const macros = `Objectif nutritionnel cible : ${form.calories} kcal, ${form.proteins}g protéines, ${form.carbs}g glucides, ${form.fats}g lipides.`;
@@ -251,30 +251,23 @@ export default function App() {
 
       {step === 3 && (
         <div>
-          <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 16, color: "#222" }}>Mode de génération</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-            <ModeCard title="Mode libre" desc="L'IA compose une recette simple adaptée à tes macros" active={form.mode === "libre"} onClick={() => set("mode", "libre")} icon="✦" />
-            <ModeCard title="Mes aliments" desc="Tu fournis ta liste, l'IA choisit les plus pertinents" active={form.mode === "ingredients"} onClick={() => set("mode", "ingredients")} icon="☰" />
+          <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 16, color: "#222" }}>Tes aliments disponibles</p>
+          <div style={{ marginBottom: 20 }}>
+            <textarea
+              placeholder="ex. poulet, riz, courgettes, huile d'olive, œufs..."
+              value={form.ingredients}
+              onChange={e => set("ingredients", e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") e.stopPropagation(); }}
+              rows={5}
+              style={{
+                width: "100%", boxSizing: "border-box", resize: "vertical",
+                fontFamily: "system-ui, sans-serif", fontSize: 14, padding: "10px 12px",
+                border: `1.5px solid ${GREEN.mid}`, borderRadius: 8,
+                background: GREEN.bg, color: "#333", lineHeight: 1.6, outline: "none",
+              }}
+            />
+            <p style={{ fontSize: 12, color: "#aaa", margin: "4px 0 0" }}>Sépare les aliments par des virgules ou des sauts de ligne.</p>
           </div>
-          {form.mode === "ingredients" && (
-            <div style={{ marginBottom: 20 }}>
-              <label style={{ fontSize: 13, color: "#666", display: "block", marginBottom: 6 }}>Tes aliments disponibles</label>
-              <textarea
-                placeholder="ex. poulet, riz, courgettes, huile d'olive, œufs..."
-                value={form.ingredients}
-                onChange={e => set("ingredients", e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") e.stopPropagation(); }}
-                rows={4}
-                style={{
-                  width: "100%", boxSizing: "border-box", resize: "vertical",
-                  fontFamily: "system-ui, sans-serif", fontSize: 14, padding: "10px 12px",
-                  border: `1.5px solid ${GREEN.mid}`, borderRadius: 8,
-                  background: GREEN.bg, color: "#333", lineHeight: 1.6, outline: "none",
-                }}
-              />
-              <p style={{ fontSize: 12, color: "#aaa", margin: "4px 0 0" }}>Sépare les aliments par des virgules ou des sauts de ligne.</p>
-            </div>
-          )}
           {error && <p style={{ color: "#e53e3e", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <div style={{ display: "flex", gap: 10 }}>
             <Btn variant="ghost" onClick={() => setStep(2)} style={{ flex: 1 }}>← Retour</Btn>
