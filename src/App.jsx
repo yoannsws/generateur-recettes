@@ -76,7 +76,7 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div style={{ maxWidth: 380, margin: "80px auto", padding: "2rem 1.5rem", textAlign: "center" }}>
+    <div style={{ maxWidth: 380, margin: "80px auto", padding: "2rem 1.5rem", textAlign: "center", background: "#fff", minHeight: "100vh" }}>
       <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 52, height: 52, borderRadius: "50%", background: GREEN.bg, marginBottom: 16 }}>
         <span style={{ fontSize: 26 }}>🥗</span>
       </div>
@@ -123,7 +123,16 @@ export default function App() {
     const modeText = form.mode === "libre"
       ? "Génère une recette simple avec 5 à 7 ingrédients maximum. Inclus toujours une portion de légumes de saison adaptée au type de recette (sucré/salé, chaud/froid). Reste simple si possible, 5 ingrédients suffisent souvent."
       : `Utilise UNIQUEMENT ces ingrédients fournis par l'utilisateur : ${form.ingredients}. N'ajoute AUCUN autre ingrédient non listé. Choisis parmi eux 5 à 7 maximum (moins si possible) pour composer une recette cohérente et simple. Si parmi les ingrédients listés il y a un légume, intègre-le obligatoirement.`;
-    return `Tu es un coach nutritionniste expert. ${macros} ${diet} ${taste} ${modeText}\n\nRéponds UNIQUEMENT avec un objet JSON valide, sans balises markdown, sans texte avant ou après. Format strict :\n{\n  "name": "Nom de la recette",\n  "description": "Courte description appétissante (1 phrase)",\n  "ingredients": [{"name": "Ingrédient", "quantity": "Quantité précise"}],\n  "steps": ["Étape 1", "Étape 2", "Étape 3"],\n  "nutrition": {"calories": 000, "proteins": 00, "carbs": 00, "fats": 00}\n}`;
+    return `Tu es un coach nutritionniste. ${macros} ${diet} ${taste} Utilise UNIQUEMENT ces ingrédients : ${form.ingredients}. N'ajoute rien d'autre. Choisis 5 à 7 max, moins si possible. Inclus un légume de saison.
+
+Réponds UNIQUEMENT en JSON valide, sans markdown. Sois ultra-concis : nom court, description 5 mots max, étapes courtes sans détails inutiles.
+{
+  "name": "Nom court",
+  "description": "5 mots max",
+  "ingredients": [{"name": "Ingrédient", "quantity": "Quantité"}],
+  "steps": ["Étape courte", "Étape courte"],
+  "nutrition": {"calories": 000, "proteins": 00, "carbs": 00, "fats": 00}
+}`;
   };
 
   const generate = async () => {
@@ -175,7 +184,7 @@ export default function App() {
   if (!auth) return <Login onLogin={() => setAuth(true)} />;
 
   return (
-    <div style={{ maxWidth: 540, margin: "0 auto", padding: "1.5rem 1rem", fontFamily: "system-ui, sans-serif" }}>
+    <div style={{ maxWidth: 540, margin: "0 auto", padding: "1.5rem 1rem", fontFamily: "system-ui, sans-serif", background: "#fff", minHeight: "100vh" }}>
 
       <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
         <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: "50%", background: GREEN.bg, marginBottom: 8 }}>
