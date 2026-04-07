@@ -8,7 +8,7 @@ const DIETS = ["Aucun", "Végétarien", "Sans gluten"];
 const TASTE = ["Salé", "Sucré"];
 const TEMP = ["Chaud", "Froid"];
 
-const defaultForm = { calories: "", proteins: "", carbs: "", fats: "", diet: "Aucun", taste: "", temp: "", mode: "", ingredients: "" };
+const defaultForm = { calories: "", proteins: "", carbs: "", fats: "", diet: "Aucun", taste: "", temp: "", ingredients: "" };
 
 const Chip = ({ label, active, onClick }) => (
   <button onClick={onClick} style={{
@@ -19,33 +19,6 @@ const Chip = ({ label, active, onClick }) => (
     border: active ? `2px solid ${GREEN.mid}` : "1.5px solid #ccc",
     transition: "all 0.15s",
   }}>{label}</button>
-);
-
-const ModeCard = ({ title, desc, active, onClick, icon }) => (
-  <div onClick={onClick} style={{
-    padding: "16px", borderRadius: "12px", cursor: "pointer",
-    border: active ? `2px solid ${GREEN.mid}` : "1.5px solid #ccc",
-    background: active ? GREEN.bg : "#fff",
-    transition: "all 0.15s",
-  }}>
-    <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-        background: active ? GREEN.mid : "#f0f0f0",
-        color: active ? "#fff" : "#888",
-        fontSize: 16, fontWeight: 700,
-      }}>{icon}</div>
-      <div style={{ flex: 1 }}>
-        <p style={{ margin: "0 0 3px", fontWeight: 500, fontSize: 14, color: active ? GREEN.dark : "#333" }}>{title}</p>
-        <p style={{ margin: 0, fontSize: 13, color: active ? GREEN.text : "#888", lineHeight: 1.4 }}>{desc}</p>
-      </div>
-      <div style={{
-        width: 20, height: 20, borderRadius: "50%", flexShrink: 0, marginTop: 2,
-        border: active ? `6px solid ${GREEN.mid}` : "2px solid #ccc",
-        background: "#fff", boxSizing: "border-box",
-      }} />
-    </div>
-  </div>
 );
 
 const Btn = ({ children, onClick, disabled, variant = "primary", style = {} }) => (
@@ -60,7 +33,7 @@ const Btn = ({ children, onClick, disabled, variant = "primary", style = {} }) =
   }}>{children}</button>
 );
 
-const steps = ["Macros", "Préférences", "Mode", "Recette"];
+const steps = ["Macros", "Préférences", "Aliments", "Recette"];
 
 function Login({ onLogin }) {
   const [code, setCode] = useState("");
@@ -82,7 +55,6 @@ function Login({ onLogin }) {
       </div>
       <p style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 500, color: "#222" }}>Générateur de recettes</p>
       <p style={{ margin: "0 0 32px", fontSize: 13, color: "#888" }}>Entre ton code d'accès pour continuer</p>
-
       <input
         type="password"
         placeholder="Code d'accès"
@@ -117,28 +89,16 @@ export default function App() {
   const canGenerate = form.ingredients.trim().length > 2;
 
   const buildPrompt = () => {
-    const macros = `Objectif nutritionnel cible : ${form.calories} kcal, ${form.proteins}g protéines, ${form.carbs}g glucides, ${form.fats}g lipides.`;
-    const diet = form.diet !== "Aucun" ? `Contrainte alimentaire : ${form.diet}.` : "";
-    const taste = `Type : ${form.taste}. Température : ${form.temp}.`;
-    const modeText = form.mode === "libre"
-      ? "Génère une recette simple avec 5 à 7 ingrédients maximum. Inclus toujours une portion de légumes de saison adaptée au type de recette (sucré/salé, chaud/froid). Reste simple si possible, 5 ingrédients suffisent souvent."
-      : `Utilise UNIQUEMENT ces ingrédients fournis par l'utilisateur : ${form.ingredients}. N'ajoute AUCUN autre ingrédient non listé. Choisis parmi eux 5 à 7 maximum (moins si possible) pour composer une recette cohérente et simple. Si parmi les ingrédients listés il y a un légume, intègre-le obligatoirement.`;
-    return `Tu es un coach nutritionniste. ${macros} ${diet} ${taste} Utilise UNIQUEMENT ces ingrédients : ${form.ingredients}. N'ajoute rien d'autre. Choisis 5 à 7 max, moins si possible. Inclus un légume de saison.
-
-Réponds UNIQUEMENT en JSON valide, sans markdown. Sois ultra-concis : nom court, description 5 mots max, étapes courtes sans détails inutiles.
-{
-  "name": "Nom court",
-  "description": "5 mots max",
-  "ingredients": [{"name": "Ingrédient", "quantity": "Quantité"}],
-  "steps": ["Étape courte", "Étape courte"],
-  "nutrition": {"calories": 000, "proteins": 00, "carbs": 00, "fats": 00}
-}`;
+    const macros = `Objectif : ${form.calories} kcal, ${form.proteins}g protéines, ${form.carbs}g glucides, ${form.fats}g lipides.`;
+    const diet = form.diet !== "Aucun" ? `Régime : ${form.diet}.` : "";
+    const taste = `${form.taste}. ${form.temp}.`;
+    return `Tu es un coach nutritionniste. ${macros} ${diet} ${taste} Utilise UNIQUEMENT ces ingrédients : ${form.ingredients}. N'ajoute rien d'autre. Choisis 5 à 7 max, moins si possible. Inclus un légume de saison.\n\nRéponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant ou après.\n{\n  "name": "Nom court",\n  "description": "5 mots max",\n  "ingredients": [{"name": "Ingrédient", "quantity": "Quantité"}],\n  "steps": ["Étape courte"],\n  "nutrition": {"calories": 0, "proteins": 0, "carbs": 0, "fats": 0}\n}`;
   };
 
   const generate = async () => {
     setLoading(true); setError(null); setResult(null);
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: buildPrompt() }] }),
@@ -156,18 +116,13 @@ Réponds UNIQUEMENT en JSON valide, sans markdown. Sois ultra-concis : nom court
   const copyRecipe = () => {
     if (!result) return;
     const txt = [
-      result.name,
-      result.description,
-      "",
+      result.name, result.description, "",
       "Ingrédients :",
       ...result.ingredients.map(i => `- ${i.name} : ${i.quantity}`),
-      "",
-      "Préparation :",
+      "", "Préparation :",
       ...result.steps.map((s, i) => `${i + 1}. ${s}`),
-      "",
-      `Estimation : ${result.nutrition?.calories} kcal | P: ${result.nutrition?.proteins}g | G: ${result.nutrition?.carbs}g | L: ${result.nutrition?.fats}g`,
+      "", `Estimation : ${result.nutrition?.calories} kcal | P: ${result.nutrition?.proteins}g | G: ${result.nutrition?.carbs}g | L: ${result.nutrition?.fats}g`,
     ].join("\n");
-
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(txt).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); }).catch(() => fallbackCopy(txt));
     } else { fallbackCopy(txt); }
