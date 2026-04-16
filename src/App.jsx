@@ -8,7 +8,7 @@ const DIETS = ["Aucun", "Végétarien", "Sans gluten"];
 const TASTE = ["Salé", "Sucré"];
 const TEMP = ["Chaud", "Froid"];
 
-const defaultForm = { calories: "", proteins: "", carbs: "", fats: "", diet: "Aucun", taste: "", temp: "", ingredients: "" };
+const defaultForm = { calories: "", proteins: "", carbs: "", fats: "", diet: "Aucun", taste: "", temp: "", mode: "", ingredients: "" };
 
 const Chip = ({ label, active, onClick }) => (
   <button onClick={onClick} style={{
@@ -33,7 +33,34 @@ const Btn = ({ children, onClick, disabled, variant = "primary", style = {} }) =
   }}>{children}</button>
 );
 
-const steps = ["Macros", "Préférences", "Aliments", "Recette"];
+const ModeCard = ({ title, desc, active, onClick, icon }) => (
+  <div onClick={onClick} style={{
+    padding: "16px", borderRadius: "12px", cursor: "pointer",
+    border: active ? `2px solid ${GREEN.mid}` : "1.5px solid #ccc",
+    background: active ? GREEN.bg : "#fff",
+    transition: "all 0.15s",
+  }}>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+      <div style={{
+        width: 36, height: 36, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
+        background: active ? GREEN.mid : "#f0f0f0",
+        color: active ? "#fff" : "#888",
+        fontSize: 18,
+      }}>{icon}</div>
+      <div style={{ flex: 1 }}>
+        <p style={{ margin: "0 0 3px", fontWeight: 500, fontSize: 14, color: active ? GREEN.dark : "#333" }}>{title}</p>
+        <p style={{ margin: 0, fontSize: 13, color: active ? GREEN.text : "#888", lineHeight: 1.4 }}>{desc}</p>
+      </div>
+      <div style={{
+        width: 20, height: 20, borderRadius: "50%", flexShrink: 0, marginTop: 2,
+        border: active ? `6px solid ${GREEN.mid}` : "2px solid #ccc",
+        background: "#fff", boxSizing: "border-box",
+      }} />
+    </div>
+  </div>
+);
+
+const steps = ["Macros", "Préférences", "Recette", "Résultat"];
 
 function Login({ onLogin }) {
   const [code, setCode] = useState("");
@@ -86,13 +113,16 @@ export default function App() {
 
   const canNext1 = form.calories && form.proteins && form.carbs && form.fats;
   const canNext2 = form.taste && form.temp;
-  const canGenerate = form.ingredients.trim().length > 2;
+  const canGenerate = form.mode === "ia" || (form.mode === "ingredients" && form.ingredients.trim().length > 2);
 
   const buildPrompt = () => {
     const macros = `Objectif : ${form.calories} kcal, ${form.proteins}g protéines, ${form.carbs}g glucides, ${form.fats}g lipides.`;
     const diet = form.diet !== "Aucun" ? `Régime : ${form.diet}.` : "";
     const taste = `${form.taste}. ${form.temp}.`;
-    return `Tu es un coach nutritionniste. ${macros} ${diet} ${taste} Utilise UNIQUEMENT ces ingrédients : ${form.ingredients}. N'ajoute rien d'autre. Choisis 5 à 7 max, moins si possible. Inclus un légume de saison.\n\nRéponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant ou après.\n{\n  "name": "Nom court",\n  "description": "5 mots max",\n  "ingredients": [{"name": "Ingrédient", "quantity": "Quantité"}],\n  "steps": ["Étape courte"],\n  "nutrition": {"calories": 0, "proteins": 0, "carbs": 0, "fats": 0}\n}`;
+    const modeText = form.mode === "ia"
+      ? "Crée une recette simple, bonne et facile à préparer. Max 5 ingrédients du quotidien. Inclus un légume de saison. Recette rapide à cuisiner."
+      : `Utilise UNIQUEMENT ces ingrédients : ${form.ingredients}. N'ajoute rien d'autre. Choisis 5 max parmi eux. Inclus un légume si disponible.`;
+    return `Tu es un coach nutritionniste. ${macros} ${diet} ${taste} ${modeText}\n\nRéponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant ou après.\n{\n  "name": "Nom court",\n  "description": "5 mots max",\n  "ingredients": [{"name": "Ingrédient", "quantity": "Quantité"}],\n  "steps": ["Étape courte"],\n  "nutrition": {"calories": 0, "proteins": 0, "carbs": 0, "fats": 0}\n}`;
   };
 
   const generate = async () => {
@@ -215,23 +245,44 @@ export default function App() {
 
       {step === 3 && (
         <div>
-          <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 16, color: "#222" }}>Tes aliments disponibles</p>
-          <div style={{ marginBottom: 20 }}>
-            <textarea
-              placeholder="ex. poulet, riz, courgettes, huile d'olive, œufs..."
-              value={form.ingredients}
-              onChange={e => set("ingredients", e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") e.stopPropagation(); }}
-              rows={5}
-              style={{
-                width: "100%", boxSizing: "border-box", resize: "vertical",
-                fontFamily: "system-ui, sans-serif", fontSize: 14, padding: "10px 12px",
-                border: `1.5px solid ${GREEN.mid}`, borderRadius: 8,
-                background: GREEN.bg, color: "#333", lineHeight: 1.6, outline: "none",
-              }}
+          <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 16, color: "#222" }}>Comment on génère ta recette ?</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+            <ModeCard
+              title="Inspiration IA"
+              desc="Pas d'idée ? L'IA te propose une recette simple et efficace"
+              active={form.mode === "ia"}
+              onClick={() => set("mode", "ia")}
+              icon="✦"
             />
-            <p style={{ fontSize: 12, color: "#aaa", margin: "4px 0 0" }}>Sépare les aliments par des virgules ou des sauts de ligne.</p>
+            <ModeCard
+              title="Mes aliments"
+              desc="Tu fournis ta liste, l'IA compose avec ce que tu as"
+              active={form.mode === "ingredients"}
+              onClick={() => set("mode", "ingredients")}
+              icon="☰"
+            />
           </div>
+
+          {form.mode === "ingredients" && (
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 13, color: "#666", display: "block", marginBottom: 6 }}>Tes aliments disponibles</label>
+              <textarea
+                placeholder="ex. poulet, riz, courgettes, huile d'olive, œufs..."
+                value={form.ingredients}
+                onChange={e => set("ingredients", e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") e.stopPropagation(); }}
+                rows={5}
+                style={{
+                  width: "100%", boxSizing: "border-box", resize: "vertical",
+                  fontFamily: "system-ui, sans-serif", fontSize: 14, padding: "10px 12px",
+                  border: `1.5px solid ${GREEN.mid}`, borderRadius: 8,
+                  background: GREEN.bg, color: "#333", lineHeight: 1.6, outline: "none",
+                }}
+              />
+              <p style={{ fontSize: 12, color: "#aaa", margin: "4px 0 0" }}>Sépare les aliments par des virgules ou des sauts de ligne.</p>
+            </div>
+          )}
+
           {error && <p style={{ color: "#e53e3e", fontSize: 13, marginBottom: 12 }}>{error}</p>}
           <div style={{ display: "flex", gap: 10 }}>
             <Btn variant="ghost" onClick={() => setStep(2)} style={{ flex: 1 }}>← Retour</Btn>
