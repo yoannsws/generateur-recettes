@@ -2,13 +2,13 @@ import { useState } from "react";
 
 const GREEN = { bg: "#f0f7f0", border: "#4a9e6b", text: "#2d6e47", light: "#e1f0e5", dark: "#1e5c38", mid: "#4a9e6b" };
 
-const CODES = ["YOAHUCK26", "LUDTHEPIN26", "ASTCOLMENARES26", "ALEMARNEUR26"];
+const CODES = ["YOAHUCK26", "LUDTHEPIN26", "ASTCOLMENARES26", "ALEMARNEUR26", "CAPPERRON26"];
 
 const DIETS = ["Aucun", "Végétarien", "Sans gluten"];
 const TASTE = ["Salé", "Sucré"];
 const TEMP = ["Chaud", "Froid"];
 
-const defaultForm = { calories: "", proteins: "", carbs: "", fats: "", diet: "Aucun", taste: "", temp: "", mode: "", ingredients: "" };
+const defaultForm = { calories: "", proteins: "", carbs: "", fats: "", diet: "Aucun", taste: "", temp: "", mode: "", ingredients: "", principal: "" };
 
 const Chip = ({ label, active, onClick }) => (
   <button onClick={onClick} style={{
@@ -113,7 +113,7 @@ export default function App() {
 
   const canNext1 = form.calories && form.proteins && form.carbs && form.fats;
   const canNext2 = form.taste && form.temp;
-  const canGenerate = form.mode === "ia" || (form.mode === "ingredients" && form.ingredients.trim().length > 2);
+  const canGenerate = form.mode === "ia" || (form.mode === "ingredients" && form.ingredients.trim().length > 2) || (form.mode === "principal" && form.principal?.trim().length > 1);
 
   const buildPrompt = () => {
     const macros = `Objectif : ${form.calories} kcal, ${form.proteins}g protéines, ${form.carbs}g glucides, ${form.fats}g lipides.`;
@@ -121,6 +121,8 @@ export default function App() {
     const taste = `${form.taste}. ${form.temp}.`;
     const modeText = form.mode === "ia"
       ? "Crée une recette simple, bonne et facile à préparer. Max 5 ingrédients du quotidien. Inclus un légume de saison. Recette rapide à cuisiner."
+      : form.mode === "principal"
+      ? `L'ingrédient principal est : ${form.principal}. Compose une recette simple autour de cet aliment avec 4 à 5 ingrédients complémentaires qui se marient bien avec lui. Inclus un légume de saison.`
       : `Utilise UNIQUEMENT ces ingrédients : ${form.ingredients}. N'ajoute rien d'autre. Choisis 5 max parmi eux. Inclus un légume si disponible.`;
     return `Tu es un coach nutritionniste. ${macros} ${diet} ${taste} ${modeText}\n\nRéponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant ou après.\n{\n  "name": "Nom court",\n  "description": "5 mots max",\n  "ingredients": [{"name": "Ingrédient", "quantity": "Quantité"}],\n  "steps": ["Étape courte"],\n  "nutrition": {"calories": 0, "proteins": 0, "carbs": 0, "fats": 0}\n}`;
   };
@@ -255,11 +257,11 @@ export default function App() {
               icon="✦"
             />
             <ModeCard
-              title="Mes aliments"
-              desc="Tu fournis ta liste, l'IA compose avec ce que tu as"
-              active={form.mode === "ingredients"}
-              onClick={() => set("mode", "ingredients")}
-              icon="☰"
+              title="Ingrédient principal"
+              desc="Tu choisis un aliment de base, l'IA construit la recette autour"
+              active={form.mode === "principal"}
+              onClick={() => set("mode", "principal")}
+              icon="★"
             />
           </div>
 
